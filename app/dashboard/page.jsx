@@ -1,17 +1,32 @@
 import Link from "next/link";
 
 export default function DashboardPage() {
-  const totalCustomers = 124;
-  const aiRequests = 842;
-  const totalRevenue = 45000;
-  const totalAutomations = 37;
-
-  const cards = [
-    { icon: "👥", title: "Total Customers", value: totalCustomers, color: "#2563eb" },
-    { icon: "🤖", title: "AI Requests", value: aiRequests, color: "#7c3aed" },
-    { icon: "💰", title: "Revenue", value: `₹${totalRevenue}`, color: "#16a34a" },
-    { icon: "⚡", title: "Automations", value: totalAutomations, color: "#ea580c" },
+  const stats = [
+    {
+      title: "Total Customers",
+      value: customers.length,
+      icon: "👥",
+    },
+    {
+      title: "Invoices",
+      value: invoices.length,
+      icon: "🧾",
+    },
+    {
+      title: "Revenue",
+      value: `₹${invoices.reduce(
+        (total, invoice) => total + Number(invoice.amount || 0),
+        0
+      )}`,
+      icon: "💰",
+    },
+    {
+      title: "Automations",
+      value: "3",
+      icon: "⚡",
+    },
   ];
+
 
   return (
     <div style={page}>
