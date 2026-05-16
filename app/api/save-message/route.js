@@ -1,14 +1,12 @@
-import { prisma } from "@/lib/prisma";
+export const dynamic = "force-dynamic";
 
 export async function POST(req) {
   const body = await req.json();
 
-  await prisma.message.create({
-    data: {
-      role: body.role,
-      content: body.content,
-    },
+  return Response.json({
+    success: true,
+    saved: false,
+    message: "Demo mode: message received but not saved to database.",
+    data: body,
   });
-
-  return Response.json({ success: true });
 }
