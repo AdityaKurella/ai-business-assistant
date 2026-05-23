@@ -8,12 +8,15 @@ generator client {
 
 model Message {
   id        String   @id @default(cuid())
+  userId    String
   role      String
   content   String
   createdAt DateTime @default(now())
 }
+
 model Customer {
   id        String   @id @default(cuid())
+  userId    String
   name      String
   company   String
   email     String
@@ -22,8 +25,10 @@ model Customer {
   notes     String?
   createdAt DateTime @default(now())
 }
+
 model Invoice {
   id        String   @id @default(cuid())
+  userId    String
   client    String
   service   String
   amount    String

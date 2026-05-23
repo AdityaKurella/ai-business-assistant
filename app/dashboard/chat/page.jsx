@@ -1,202 +1,180 @@
 "use client";
 
-import { useEffect, useState } from "react";
-
-const defaultMessage = {
-  role: "assistant",
-  content:
-    "Hello Aditya 👋 I’m your AI business assistant. How can I help you today?",
-};
+import { useEffect, useRef, useState } from "react";
+import ReactMarkdown from "react-markdown";
 
 export default function ChatPage() {
-  const [chats, setChats] = useState([]);
-  const [activeChatId, setActiveChatId] = useState(null);
-  const [messages, setMessages] = useState([defaultMessage]);
+  const welcomeMessage = {
+    role: "assistant",
+    content:
+      "Hello Aditya 👋 I’m your AI business assistant. How can I help you today?",
+  };
+
+  const [messages, setMessages] = useState([welcomeMessage]);
   const [input, setInput] = useState("");
+  const [loading, setLoading] = useState(false);
+  const bottomRef = useRef(null);
 
   useEffect(() => {
-    const savedChats = JSON.parse(localStorage.getItem("ai-chats")) || [];
-
-    if (savedChats.length > 0) {
-      setChats(savedChats);
-      setActiveChatId(savedChats[0].id);
-      setMessages(savedChats[0].messages);
-    }
+    fetchMessages();
   }, []);
 
-  const saveChats = (updatedChats) => {
-    setChats(updatedChats);
-    localStorage.setItem("ai-chats", JSON.stringify(updatedChats));
-  };
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({
+      behavior: "smooth",
+    });
+  }, [messages, loading]);
 
-  const createNewChat = () => {
-    const newChat = {
-      id: Date.now().toString(),
-      title: "New Chat",
-      messages: [defaultMessage],
-    };
+  async function fetchMessages() {
+    try {
+      const res = await fetch("/api/save-message");
+      const data = await res.json();
 
-    const updatedChats = [newChat, ...chats];
+      if (Array.isArray(data) && data.length > 0) {
+        setMessages(data);
+      }
+    } catch (error) {
+      console.error("Fetch messages error:", error);
+    }
+  }
 
-    saveChats(updatedChats);
-    setActiveChatId(newChat.id);
-    setMessages(newChat.messages);
-  };
+  async function saveMessage(role, content) {
+    try {
+      await fetch("/api/save-message", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ role, content }),
+      });
+    } catch (error) {
+      console.error("Save message error:", error);
+    }
+  }
 
-  const openChat = (chat) => {
-    setActiveChatId(chat.id);
-    setMessages(chat.messages);
-  };
+  async function clearHistory() {
+    try {
+      await fetch("/api/save-message", {
+        method: "DELETE",
+      });
 
-  const sendMessage = () => {
-    if (!input.trim()) return;
+      setMessages([welcomeMessage]);
+    } catch (error) {
+      console.error("Clear history error:", error);
+    }
+  }
+
+  async function sendMessage() {
+    if (!input.trim() || loading) return;
+
+    const currentInput = input.trim();
 
     const userMessage = {
       role: "user",
-      content: input,
+      content: currentInput,
     };
 
-    const aiMessage = {
-      role: "assistant",
-      content:
-        "Demo AI response: Later this can be connected to OpenAI, Gemini, or your own backend AI model.",
-    };
+    setMessages((prev) => [...prev, userMessage]);
+    setInput("");
+    setLoading(true);
 
-    const updatedMessages = [...messages, userMessage, aiMessage];
+    await saveMessage("user", currentInput);
 
-    let updatedChats = chats;
+    try {
+      const res = await fetch("/api/ai", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          message: currentInput,
+        }),
+      });
 
-    if (!activeChatId) {
-      const newChat = {
-        id: Date.now().toString(),
-        title: input.slice(0, 28),
-        messages: updatedMessages,
+      const data = await res.json();
+      const aiReply = data.reply || data.error || "No response generated.";
+
+      const aiMessage = {
+        role: "assistant",
+        content: aiReply,
       };
 
-      updatedChats = [newChat, ...chats];
-      setActiveChatId(newChat.id);
-    } else {
-      updatedChats = chats.map((chat) =>
-        chat.id === activeChatId
-          ? {
-              ...chat,
-              title:
-                chat.title === "New Chat"
-                  ? input.slice(0, 28)
-                  : chat.title,
-              messages: updatedMessages,
-            }
-          : chat
-      );
+      setMessages((prev) => [...prev, aiMessage]);
+      await saveMessage("assistant", aiReply);
+    } catch (error) {
+      console.error("AI request error:", error);
+
+      const failedMessage = {
+        role: "assistant",
+        content: "AI request failed. Please check your OpenRouter API route.",
+      };
+
+      setMessages((prev) => [...prev, failedMessage]);
+      await saveMessage("assistant", failedMessage.content);
+    } finally {
+      setLoading(false);
     }
-
-    saveChats(updatedChats);
-    setMessages(updatedMessages);
-    setInput("");
-  };
-
-  const deleteChat = (id) => {
-    const updatedChats = chats.filter((chat) => chat.id !== id);
-
-    saveChats(updatedChats);
-
-    if (activeChatId === id) {
-      if (updatedChats.length > 0) {
-        setActiveChatId(updatedChats[0].id);
-        setMessages(updatedChats[0].messages);
-      } else {
-        setActiveChatId(null);
-        setMessages([defaultMessage]);
-      }
-    }
-  };
+  }
 
   return (
     <div style={container}>
-      <div style={sidebar}>
-        <div style={sidebarTop}>
-          <h2 style={sidebarTitle}>AI Workspace</h2>
-
-          <button onClick={createNewChat} style={newChatBtn}>
-            ＋ New Chat
-          </button>
+      <div style={header}>
+        <div>
+          <p style={badge}>OPENROUTER POWERED</p>
+          <h1 style={title}>AssistFlow AI</h1>
+          <p style={subtitle}>
+            Ask business, CRM, invoice, automation and SaaS growth questions.
+          </p>
         </div>
 
-        <div style={historyList}>
-          {chats.length === 0 ? (
-            <p style={emptyText}>No chat history yet.</p>
-          ) : (
-            chats.map((chat) => (
-              <div
-                key={chat.id}
-                style={{
-                  ...historyItem,
-                  border:
-                    activeChatId === chat.id
-                      ? "1px solid #60a5fa"
-                      : "1px solid rgba(255,255,255,0.06)",
-                }}
-              >
-                <button onClick={() => openChat(chat)} style={historyButton}>
-                  {chat.title}
-                </button>
-
-                <button onClick={() => deleteChat(chat.id)} style={deleteBtn}>
-                  ×
-                </button>
-              </div>
-            ))
-          )}
+        <div style={headerActions}>
+          <button style={clearButton} onClick={clearHistory}>
+            Clear History
+          </button>
+          <div style={status}>Live AI</div>
         </div>
       </div>
 
-      <div style={chatArea}>
-        <div style={chatHeader}>
-          <div>
-            <p style={headerLabel}>AI MODEL</p>
-            <h1 style={headerTitle}>AssistFlow AI</h1>
-          </div>
-
-          <div style={status}>
-            <div style={dot}></div>
-            Demo Mode
-          </div>
-        </div>
-
-        <div style={messagesContainer}>
+      <div style={chatShell}>
+        <div style={chatBox}>
           {messages.map((message, index) => (
             <div
               key={index}
-              style={{
-                ...messageBox,
-                alignSelf:
-                  message.role === "user" ? "flex-end" : "flex-start",
-                background:
-                  message.role === "user"
-                    ? "linear-gradient(135deg, #2563eb, #7c3aed)"
-                    : "rgba(255,255,255,0.06)",
-              }}
+              style={message.role === "user" ? userBubble : aiBubble}
             >
-              <p style={messageRole}>
+              <p style={role}>
                 {message.role === "user" ? "You" : "AI Assistant"}
               </p>
 
-              <p style={messageText}>{message.content}</p>
+              <div style={markdownWrapper}>
+                <ReactMarkdown>{message.content}</ReactMarkdown>
+              </div>
             </div>
           ))}
+
+          {loading && (
+            <div style={thinkingBubble}>
+              <span style={pulseDot}></span>
+              AI is thinking...
+            </div>
+          )}
+
+          <div ref={bottomRef} />
         </div>
 
-        <div style={inputArea}>
+        <div style={inputRow}>
           <input
+            style={inputStyle}
             value={input}
+            placeholder="Ask your AI business assistant..."
             onChange={(e) => setInput(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && sendMessage()}
-            placeholder="Ask anything about business, AI, analytics..."
-            style={inputBox}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") sendMessage();
+            }}
           />
 
-          <button onClick={sendMessage} style={sendBtn}>
-            Send
+          <button style={button} onClick={sendMessage} disabled={loading}>
+            {loading ? "Sending..." : "Send"}
           </button>
         </div>
       </div>
@@ -206,180 +184,155 @@ export default function ChatPage() {
 
 const container = {
   display: "grid",
-  gridTemplateColumns: "320px 1fr",
   gap: 24,
-  height: "calc(100vh - 160px)",
 };
 
-const sidebar = {
+const header = {
+  display: "flex",
+  justifyContent: "space-between",
+  alignItems: "center",
+  padding: 28,
   borderRadius: 28,
-  padding: 24,
-  background: "rgba(255,255,255,0.04)",
-  border: "1px solid rgba(255,255,255,0.08)",
-  display: "flex",
-  flexDirection: "column",
-};
-
-const sidebarTop = {
-  display: "flex",
-  flexDirection: "column",
-  gap: 18,
-};
-
-const sidebarTitle = {
-  margin: 0,
-  fontSize: 26,
-};
-
-const newChatBtn = {
-  border: "none",
-  padding: "14px",
-  borderRadius: 16,
-  color: "white",
-  cursor: "pointer",
-  fontWeight: 600,
   background:
-    "linear-gradient(135deg, rgba(37,99,235,1), rgba(124,58,237,1))",
+    "linear-gradient(135deg, rgba(15,23,42,.92), rgba(17,24,39,.78))",
+  border: "1px solid rgba(255,255,255,.08)",
+  boxShadow: "0 20px 60px rgba(0,0,0,.25)",
 };
 
-const historyList = {
-  marginTop: 28,
-  display: "grid",
-  gap: 14,
-};
-
-const historyItem = {
-  padding: 12,
-  borderRadius: 16,
-  background: "rgba(255,255,255,0.03)",
-  color: "#d4d4d8",
-  display: "flex",
-  justifyContent: "space-between",
-  alignItems: "center",
-};
-
-const historyButton = {
-  background: "transparent",
-  border: "none",
-  color: "white",
-  cursor: "pointer",
-  textAlign: "left",
-  flex: 1,
-};
-
-const deleteBtn = {
-  background: "rgba(239,68,68,0.18)",
-  color: "#fca5a5",
-  border: "1px solid rgba(239,68,68,0.25)",
-  borderRadius: 10,
-  cursor: "pointer",
-  width: 28,
-  height: 28,
-};
-
-const emptyText = {
-  color: "#a1a1aa",
-};
-
-const chatArea = {
-  borderRadius: 28,
-  background: "rgba(255,255,255,0.04)",
-  border: "1px solid rgba(255,255,255,0.08)",
-  display: "flex",
-  flexDirection: "column",
-  overflow: "hidden",
-};
-
-const chatHeader = {
-  height: 90,
-  padding: "0 28px",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "space-between",
-  borderBottom: "1px solid rgba(255,255,255,0.08)",
-};
-
-const headerLabel = {
+const badge = {
   margin: 0,
   color: "#60a5fa",
-  fontSize: 12,
-  letterSpacing: "0.08em",
+  fontSize: 13,
+  fontWeight: 800,
+  letterSpacing: ".12em",
 };
 
-const headerTitle = {
-  margin: "8px 0 0",
-  fontSize: 30,
+const title = {
+  fontSize: 44,
+  margin: "10px 0",
+  letterSpacing: "-0.04em",
+};
+
+const subtitle = {
+  color: "#a1a1aa",
+  margin: 0,
+};
+
+const headerActions = {
+  display: "flex",
+  alignItems: "center",
+  gap: 12,
+};
+
+const clearButton = {
+  padding: "10px 16px",
+  borderRadius: 999,
+  border: "1px solid rgba(255,255,255,.12)",
+  background: "rgba(255,255,255,.06)",
+  color: "#e5e7eb",
+  cursor: "pointer",
 };
 
 const status = {
+  padding: "10px 16px",
+  borderRadius: 999,
+  background: "rgba(34,197,94,.15)",
+  color: "#4ade80",
+  fontWeight: 700,
+};
+
+const chatShell = {
+  padding: 24,
+  borderRadius: 28,
+  background:
+    "linear-gradient(180deg, rgba(255,255,255,.045), rgba(124,58,237,.08))",
+  border: "1px solid rgba(255,255,255,.08)",
+};
+
+const chatBox = {
+  height: "65vh",
+  overflowY: "auto",
+  display: "flex",
+  flexDirection: "column",
+  gap: 18,
+  padding: 8,
+  paddingBottom: 80,
+};
+
+const aiBubble = {
+  maxWidth: "85%",
+  padding: 18,
+  borderRadius: 22,
+  background: "rgba(255,255,255,.06)",
+  border: "1px solid rgba(255,255,255,.06)",
+  color: "#e5e7eb",
+};
+
+const userBubble = {
+  maxWidth: "70%",
+  marginLeft: "auto",
+  padding: 18,
+  borderRadius: 22,
+  background: "linear-gradient(135deg, #2563eb, #7c3aed)",
+  color: "white",
+  boxShadow: "0 16px 40px rgba(79,70,229,.28)",
+};
+
+const thinkingBubble = {
+  maxWidth: "75%",
+  padding: 18,
+  borderRadius: 22,
+  background: "rgba(255,255,255,.06)",
+  color: "#cbd5e1",
   display: "flex",
   alignItems: "center",
   gap: 10,
-  padding: "12px 18px",
-  borderRadius: 999,
-  background: "rgba(255,255,255,0.05)",
 };
 
-const dot = {
+const pulseDot = {
   width: 10,
   height: 10,
   borderRadius: 999,
   background: "#22c55e",
-  boxShadow: "0 0 12px #22c55e",
+  boxShadow: "0 0 16px #22c55e",
 };
 
-const messagesContainer = {
-  flex: 1,
-  padding: 28,
+const role = {
+  margin: "0 0 8px",
+  fontSize: 13,
+  fontWeight: 700,
+  opacity: 0.8,
+};
+
+const markdownWrapper = {
+  lineHeight: 1.8,
+  fontSize: 16,
+};
+
+const inputRow = {
   display: "flex",
-  flexDirection: "column",
-  gap: 18,
-  overflowY: "auto",
+  gap: 14,
+  position: "sticky",
+  bottom: 0,
+  background: "#050816",
+  paddingTop: 14,
 };
 
-const messageBox = {
-  maxWidth: "70%",
-  padding: 20,
-  borderRadius: 24,
-};
-
-const messageRole = {
-  margin: 0,
-  fontSize: 12,
-  color: "#d4d4d8",
-};
-
-const messageText = {
-  margin: "10px 0 0",
-  lineHeight: 1.7,
-  color: "white",
-};
-
-const inputArea = {
-  padding: 24,
-  borderTop: "1px solid rgba(255,255,255,0.08)",
-  display: "flex",
-  gap: 16,
-};
-
-const inputBox = {
+const inputStyle = {
   flex: 1,
-  border: "none",
-  outline: "none",
+  padding: "16px 18px",
   borderRadius: 18,
-  padding: "18px 20px",
-  background: "rgba(255,255,255,0.06)",
+  border: "1px solid rgba(255,255,255,.1)",
+  background: "rgba(255,255,255,.05)",
   color: "white",
-  fontSize: 15,
+  outline: "none",
 };
 
-const sendBtn = {
-  border: "none",
+const button = {
   padding: "0 26px",
   borderRadius: 18,
-  cursor: "pointer",
+  border: "none",
   color: "white",
-  fontWeight: 700,
-  background:
-    "linear-gradient(135deg, rgba(37,99,235,1), rgba(124,58,237,1))",
+  cursor: "pointer",
+  background: "linear-gradient(135deg, #2563eb, #7c3aed)",
 };

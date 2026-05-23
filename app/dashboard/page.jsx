@@ -1,78 +1,102 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import {
+  ResponsiveContainer,
+  BarChart,
+  Bar,
+  XAxis,
+  Tooltip,
+} from "recharts";
+
 export default function DashboardPage() {
+  const [data, setData] = useState({
+    customers: 0,
+    totalInvoices: 0,
+    unpaidInvoices: 0,
+    totalRevenue: 0,
+  });
+
+  const [chartData, setChartData] = useState([]);
+
+  useEffect(() => {
+    fetchDashboardData();
+  }, []);
+
+  async function fetchDashboardData() {
+    try {
+      const statsRes = await fetch("/api/dashboard-stats");
+      const stats = await statsRes.json();
+      setData(stats);
+
+      const chartRes = await fetch("/api/chart");
+      const chart = await chartRes.json();
+      setChartData(chart);
+    } catch (error) {
+      console.error("Dashboard data error:", error);
+    }
+  }
+
   const stats = [
     {
       title: "Total Customers",
-      value: "24",
+      value: data.customers,
       icon: "👥",
-      growth: "+12%",
+      growth: "Live",
     },
     {
-      title: "Invoices",
-      value: "18",
+      title: "Total Invoices",
+      value: data.totalInvoices,
       icon: "🧾",
-      growth: "+8%",
+      growth: "Live",
     },
     {
-      title: "AI Automations",
-      value: "7",
-      icon: "⚡",
-      growth: "+21%",
+      title: "Unpaid Invoices",
+      value: data.unpaidInvoices,
+      icon: "⚠️",
+      growth: "Live",
     },
     {
       title: "Revenue",
-      value: "$12.4K",
+      value: `₹${Number(data.totalRevenue).toLocaleString("en-IN")}`,
       icon: "💰",
-      growth: "+18%",
+      growth: "Live",
     },
-  ];
-
-  const activities = [
-    "New CRM customer added",
-    "Invoice generated successfully",
-    "AI workflow executed",
-    "Analytics dashboard updated",
   ];
 
   return (
     <div style={container}>
-      <div style={hero}>
+      <section style={hero}>
         <div>
-          <p style={badge}>AI POWERED BUSINESS OS</p>
-
-          <h1 style={title}>
-            Welcome back,
-            <br />
-            Aditya 👋
-          </h1>
-
+          <p style={badge}>AI BUSINESS DASHBOARD</p>
+          <h1 style={title}>Welcome back 👋</h1>
           <p style={subtitle}>
-            Manage CRM, invoices, AI workflows and business analytics
-            from one intelligent dashboard.
+            Track your CRM, invoices, revenue and AI business workflows from one
+            professional SaaS dashboard.
           </p>
         </div>
 
         <div style={heroCard}>
-          <p style={heroLabel}>System Status</p>
-
-          <h2 style={heroValue}>98.2%</h2>
-
+          <p style={heroLabel}>Business Health</p>
+          <h2 style={heroValue}>
+            {data.totalInvoices > 0 ? "Growing" : "Starting"}
+          </h2>
           <p style={heroText}>
-            All AI services operational and dashboard performance stable.
+            You have {data.customers} customers and ₹
+            {Number(data.totalRevenue).toLocaleString("en-IN")} total revenue
+            tracked.
           </p>
         </div>
-      </div>
+      </section>
 
       <section style={statsGrid}>
         {stats.map((item) => (
           <div key={item.title} style={card}>
             <div style={cardTop}>
               <div style={icon}>{item.icon}</div>
-
               <span style={growth}>{item.growth}</span>
             </div>
-
             <h2 style={value}>{item.value}</h2>
-
             <p style={label}>{item.title}</p>
           </div>
         ))}
@@ -85,36 +109,50 @@ export default function DashboardPage() {
               <p style={smallLabel}>Analytics</p>
               <h3 style={sectionTitle}>Revenue Overview</h3>
             </div>
-
-            <button style={button}>Export</button>
+            <button style={button} onClick={fetchDashboardData}>
+              Refresh
+            </button>
           </div>
 
           <div style={chartArea}>
-            <div style={bar1}></div>
-            <div style={bar2}></div>
-            <div style={bar3}></div>
-            <div style={bar4}></div>
-            <div style={bar5}></div>
-            <div style={bar6}></div>
+            <ResponsiveContainer width="100%" height={260}>
+              <BarChart data={chartData}>
+                <XAxis dataKey="month" stroke="#a1a1aa" />
+                <Tooltip
+                  contentStyle={{
+                    background: "#111827",
+                    border: "1px solid rgba(255,255,255,.08)",
+                    borderRadius: 12,
+                    color: "white",
+                  }}
+                  labelStyle={{ color: "white" }}
+                />
+                <Bar
+                  dataKey="revenue"
+                  radius={[12, 12, 0, 0]}
+                  fill="#7c3aed"
+                />
+              </BarChart>
+            </ResponsiveContainer>
           </div>
         </div>
 
         <div style={activityCard}>
-          <div style={sectionHeader}>
-            <div>
-              <p style={smallLabel}>Realtime</p>
-              <h3 style={sectionTitle}>Recent Activity</h3>
-            </div>
-          </div>
+          <p style={smallLabel}>Business Analysis</p>
+          <h3 style={sectionTitle}>Work Summary</h3>
 
           <div style={activityList}>
-            {activities.map((activity, index) => (
-              <div key={index} style={activityItem}>
-                <div style={activityDot}></div>
-
-                <span>{activity}</span>
-              </div>
-            ))}
+            <div style={activityItem}>👥 Customers: {data.customers}</div>
+            <div style={activityItem}>
+              🧾 Total Invoices: {data.totalInvoices}
+            </div>
+            <div style={activityItem}>
+              ⚠️ Pending Payments: {data.unpaidInvoices}
+            </div>
+            <div style={activityItem}>
+              💰 Revenue Tracked: ₹
+              {Number(data.totalRevenue).toLocaleString("en-IN")}
+            </div>
           </div>
         </div>
       </section>
@@ -137,19 +175,18 @@ const badge = {
   margin: 0,
   color: "#60a5fa",
   fontSize: 13,
-  fontWeight: 700,
-  letterSpacing: "0.08em",
+  fontWeight: 800,
+  letterSpacing: "0.12em",
 };
 
 const title = {
-  fontSize: 52,
-  lineHeight: 1,
-  margin: "14px 0",
-  letterSpacing: "-0.06em",
+  fontSize: 54,
+  margin: "12px 0",
+  letterSpacing: "-0.05em",
 };
 
 const subtitle = {
-  maxWidth: 620,
+  maxWidth: 650,
   color: "#a1a1aa",
   fontSize: 17,
   lineHeight: 1.7,
@@ -159,20 +196,15 @@ const heroCard = {
   padding: 28,
   borderRadius: 28,
   background:
-    "linear-gradient(135deg, rgba(37,99,235,0.18), rgba(124,58,237,0.18))",
-  border: "1px solid rgba(255,255,255,0.08)",
-  backdropFilter: "blur(16px)",
+    "linear-gradient(135deg, rgba(37,99,235,.2), rgba(124,58,237,.2))",
+  border: "1px solid rgba(255,255,255,.1)",
 };
 
-const heroLabel = {
-  color: "#93c5fd",
-  margin: 0,
-  fontSize: 14,
-};
+const heroLabel = { color: "#93c5fd", margin: 0 };
 
 const heroValue = {
-  fontSize: 56,
-  margin: "10px 0",
+  fontSize: 46,
+  margin: "12px 0",
 };
 
 const heroText = {
@@ -189,9 +221,8 @@ const statsGrid = {
 const card = {
   padding: 24,
   borderRadius: 24,
-  background: "rgba(255,255,255,0.04)",
-  border: "1px solid rgba(255,255,255,0.08)",
-  backdropFilter: "blur(14px)",
+  background: "rgba(255,255,255,.045)",
+  border: "1px solid rgba(255,255,255,.09)",
 };
 
 const cardTop = {
@@ -209,7 +240,7 @@ const icon = {
   justifyContent: "center",
   fontSize: 24,
   background:
-    "linear-gradient(135deg, rgba(37,99,235,0.28), rgba(124,58,237,0.28))",
+    "linear-gradient(135deg, rgba(37,99,235,.3), rgba(124,58,237,.3))",
 };
 
 const growth = {
@@ -229,22 +260,22 @@ const label = {
 
 const bottomGrid = {
   display: "grid",
-  gridTemplateColumns: "1.4fr 0.8fr",
+  gridTemplateColumns: "1.4fr .8fr",
   gap: 24,
 };
 
 const largeCard = {
   padding: 28,
   borderRadius: 28,
-  background: "rgba(255,255,255,0.04)",
-  border: "1px solid rgba(255,255,255,0.08)",
+  background: "rgba(255,255,255,.045)",
+  border: "1px solid rgba(255,255,255,.09)",
 };
 
 const activityCard = {
   padding: 28,
   borderRadius: 28,
-  background: "rgba(255,255,255,0.04)",
-  border: "1px solid rgba(255,255,255,0.08)",
+  background: "rgba(255,255,255,.045)",
+  border: "1px solid rgba(255,255,255,.09)",
 };
 
 const sectionHeader = {
@@ -258,10 +289,11 @@ const smallLabel = {
   margin: 0,
   color: "#60a5fa",
   fontSize: 13,
+  fontWeight: 700,
 };
 
 const sectionTitle = {
-  margin: "6px 0 0",
+  margin: "6px 0 20px",
   fontSize: 24,
 };
 
@@ -271,49 +303,22 @@ const button = {
   borderRadius: 14,
   color: "white",
   cursor: "pointer",
-  background:
-    "linear-gradient(135deg, rgba(37,99,235,0.95), rgba(124,58,237,0.95))",
+  background: "linear-gradient(135deg, #2563eb, #7c3aed)",
 };
 
 const chartArea = {
+  width: "100%",
   height: 260,
-  display: "flex",
-  alignItems: "flex-end",
-  gap: 18,
 };
-
-const commonBar = {
-  flex: 1,
-  borderRadius: 18,
-  background:
-    "linear-gradient(180deg, rgba(37,99,235,1), rgba(124,58,237,1))",
-};
-
-const bar1 = { ...commonBar, height: "40%" };
-const bar2 = { ...commonBar, height: "65%" };
-const bar3 = { ...commonBar, height: "52%" };
-const bar4 = { ...commonBar, height: "88%" };
-const bar5 = { ...commonBar, height: "70%" };
-const bar6 = { ...commonBar, height: "96%" };
 
 const activityList = {
   display: "grid",
-  gap: 18,
+  gap: 14,
 };
 
 const activityItem = {
-  display: "flex",
-  alignItems: "center",
-  gap: 14,
   padding: 16,
   borderRadius: 18,
-  background: "rgba(255,255,255,0.03)",
+  background: "rgba(255,255,255,.04)",
+  color: "#d4d4d8",
 };
-
-const activityDot = {
-  width: 10,
-  height: 10,
-  borderRadius: 999,
-  background: "#22c55e",
-  boxShadow: "0 0 12px #22c55e",
-};  
