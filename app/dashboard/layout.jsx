@@ -4,14 +4,14 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 const links = [
-  { name: "🏠 Dashboard", href: "/dashboard" },
-  { name: "🤖 AI Chat", href: "/dashboard/chat" },
-  { name: "👥 CRM", href: "/dashboard/crm" },
-  { name: "✉️ Email Writer", href: "/dashboard/email-writer" },
-  { name: "📊 Analytics", href: "/dashboard/analytics" },
-  { name: "⚡ Automations", href: "/dashboard/automations" },
-  { name: "🧾 Invoices", href: "/dashboard/invoices" },
-  { name: "⚙️ Settings", href: "/dashboard/settings" },
+  { name: "Dashboard", icon: "⌘", href: "/dashboard" },
+  { name: "AI Chat", icon: "✦", href: "/dashboard/chat" },
+  { name: "CRM", icon: "◈", href: "/dashboard/crm" },
+  { name: "Email Writer", icon: "✉", href: "/dashboard/email-writer" },
+  { name: "Analytics", icon: "▣", href: "/dashboard/analytics" },
+  { name: "Automations", icon: "⚡", href: "/dashboard/automations" },
+  { name: "Invoices", icon: "▤", href: "/dashboard/invoices" },
+  { name: "Settings", icon: "⚙", href: "/dashboard/settings" },
 ];
 
 export default function DashboardLayout({ children }) {
@@ -20,11 +20,11 @@ export default function DashboardLayout({ children }) {
   return (
     <div style={layout}>
       <aside style={sidebar}>
-        <div style={logoBox}>
-          <div style={logoIcon}>AI</div>
+        <div style={brand}>
+          <div style={brandIcon}>AI</div>
           <div>
-            <h1 style={logoTitle}>AI Assistant</h1>
-            <p style={logoText}>Business Platform</p>
+            <h1 style={brandTitle}>AssistFlow</h1>
+            <p style={brandSub}>AI Business OS</p>
           </div>
         </div>
 
@@ -39,141 +39,210 @@ export default function DashboardLayout({ children }) {
                 style={{
                   ...navLink,
                   background: active
-                    ? "linear-gradient(135deg, #2563eb, #7c3aed)"
-                    : "#18181b",
+                    ? "linear-gradient(135deg, rgba(37,99,235,0.95), rgba(124,58,237,0.95))"
+                    : "rgba(255,255,255,0.04)",
                   border: active
-                    ? "1px solid #3b82f6"
-                    : "1px solid #27272a",
+                    ? "1px solid rgba(147,197,253,0.5)"
+                    : "1px solid rgba(255,255,255,0.06)",
                   boxShadow: active
-                    ? "0 0 18px rgba(37, 99, 235, 0.35)"
+                    ? "0 0 28px rgba(37,99,235,0.35)"
                     : "none",
                 }}
               >
-                {link.name}
+                <span style={navIcon}>{link.icon}</span>
+                <span>{link.name}</span>
               </Link>
             );
           })}
         </nav>
+
+        <div style={upgradeCard}>
+          <p style={{ margin: 0, color: "#c4b5fd", fontSize: 13 }}>
+            Demo AI Mode
+          </p>
+          <h3 style={{ margin: "8px 0", fontSize: 16 }}>
+            Portfolio SaaS MVP
+          </h3>
+          <p style={{ margin: 0, color: "#a1a1aa", fontSize: 13 }}>
+            CRM, invoices, automations and AI workflows.
+          </p>
+        </div>
       </aside>
 
-      <div style={contentArea}>
-        <header style={header}>
+      <section style={mainArea}>
+        <header style={topbar}>
           <div>
-            <h2 style={headerTitle}>AI Business Platform</h2>
-            <p style={headerText}>Manage your AI-powered business tools</p>
+            <p style={eyebrow}>AI Dashboard</p>
+            <h2 style={topbarTitle}>Business Command Center</h2>
           </div>
 
-          <div style={userBox}>
-            <span style={statusDot}></span>
-            <p style={{ color: "#d4d4d8" }}>Aditya</p>
+          <div style={topActions}>
+            <div style={searchBox}>Search workspace...</div>
+            <div style={userPill}>
+              <span style={onlineDot}></span>
+              Aditya
+            </div>
           </div>
         </header>
 
-        <main style={main}>{children}</main>
-      </div>
+        <main style={content}>{children}</main>
+      </section>
     </div>
   );
 }
 
 const layout = {
-  display: "flex",
   minHeight: "100vh",
-  background: "linear-gradient(135deg, #050505, #09090b, #111827)",
+  display: "flex",
+  background:
+    "radial-gradient(circle at top left, rgba(37,99,235,0.28), transparent 35%), radial-gradient(circle at bottom right, rgba(124,58,237,0.2), transparent 35%), #050509",
   color: "white",
+  fontFamily: "Inter, system-ui, sans-serif",
 };
 
 const sidebar = {
-  width: 280,
-  padding: 24,
-  borderRight: "1px solid #27272a",
-  background: "rgba(17, 17, 17, 0.95)",
+  width: 290,
+  padding: 22,
+  display: "flex",
+  flexDirection: "column",
+  gap: 24,
+  borderRight: "1px solid rgba(255,255,255,0.08)",
+  background: "rgba(10,10,16,0.82)",
+  backdropFilter: "blur(18px)",
 };
 
-const logoBox = {
+const brand = {
   display: "flex",
   alignItems: "center",
   gap: 14,
-  marginBottom: 40,
 };
 
-const logoIcon = {
-  width: 46,
-  height: 46,
-  borderRadius: 14,
-  background: "linear-gradient(135deg, #2563eb, #7c3aed)",
+const brandIcon = {
+  width: 48,
+  height: 48,
+  borderRadius: 16,
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
-  fontWeight: "bold",
+  fontWeight: 800,
+  background: "linear-gradient(135deg, #2563eb, #7c3aed)",
+  boxShadow: "0 0 30px rgba(37,99,235,0.55)",
 };
 
-const logoTitle = {
-  fontSize: 22,
+const brandTitle = {
   margin: 0,
+  fontSize: 23,
+  letterSpacing: "-0.04em",
 };
 
-const logoText = {
+const brandSub = {
   margin: 0,
-  color: "#a1a1aa",
+  color: "#9ca3af",
   fontSize: 13,
 };
 
 const nav = {
-  display: "flex",
-  flexDirection: "column",
-  gap: 12,
+  display: "grid",
+  gap: 11,
 };
 
 const navLink = {
-  padding: "14px 16px",
-  borderRadius: 14,
-  color: "white",
-  textDecoration: "none",
-  transition: "0.2s",
-};
-
-const contentArea = {
-  flex: 1,
-};
-
-const header = {
-  height: 76,
-  borderBottom: "1px solid #27272a",
+  height: 46,
+  padding: "0 14px",
+  borderRadius: 15,
   display: "flex",
   alignItems: "center",
-  justifyContent: "space-between",
-  padding: "0 30px",
-  background: "rgba(17, 17, 17, 0.8)",
+  gap: 12,
+  color: "white",
+  textDecoration: "none",
+  transition: "0.2s ease",
 };
 
-const headerTitle = {
-  margin: 0,
-  fontSize: 20,
-};
-
-const headerText = {
-  margin: 0,
-  color: "#a1a1aa",
+const navIcon = {
+  width: 24,
+  height: 24,
+  borderRadius: 8,
+  background: "rgba(255,255,255,0.08)",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
   fontSize: 13,
 };
 
-const userBox = {
+const upgradeCard = {
+  marginTop: "auto",
+  padding: 18,
+  borderRadius: 20,
+  border: "1px solid rgba(124,58,237,0.35)",
+  background:
+    "linear-gradient(135deg, rgba(37,99,235,0.12), rgba(124,58,237,0.12))",
+};
+
+const mainArea = {
+  flex: 1,
+  minWidth: 0,
+};
+
+const topbar = {
+  height: 86,
+  padding: "0 34px",
   display: "flex",
   alignItems: "center",
-  gap: 10,
-  background: "#18181b",
-  border: "1px solid #27272a",
-  padding: "10px 14px",
-  borderRadius: 999,
+  justifyContent: "space-between",
+  borderBottom: "1px solid rgba(255,255,255,0.08)",
+  background: "rgba(5,5,9,0.55)",
+  backdropFilter: "blur(16px)",
 };
 
-const statusDot = {
-  width: 10,
-  height: 10,
+const eyebrow = {
+  margin: 0,
+  color: "#60a5fa",
+  fontSize: 13,
+  fontWeight: 700,
+  letterSpacing: "0.08em",
+  textTransform: "uppercase",
+};
+
+const topbarTitle = {
+  margin: "4px 0 0",
+  fontSize: 22,
+  letterSpacing: "-0.03em",
+};
+
+const topActions = {
+  display: "flex",
+  alignItems: "center",
+  gap: 14,
+};
+
+const searchBox = {
+  width: 260,
+  padding: "12px 16px",
   borderRadius: 999,
+  color: "#71717a",
+  background: "rgba(255,255,255,0.06)",
+  border: "1px solid rgba(255,255,255,0.08)",
+};
+
+const userPill = {
+  display: "flex",
+  alignItems: "center",
+  gap: 9,
+  padding: "12px 15px",
+  borderRadius: 999,
+  background: "rgba(255,255,255,0.06)",
+  border: "1px solid rgba(255,255,255,0.08)",
+  color: "#d4d4d8",
+};
+
+const onlineDot = {
+  width: 9,
+  height: 9,
+  borderRadius: 99,
   background: "#22c55e",
+  boxShadow: "0 0 12px #22c55e",
 };
 
-const main = {
-  padding: 0,
+const content = {
+  padding: 34,
 };
