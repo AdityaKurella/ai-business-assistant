@@ -1,57 +1,65 @@
-import { auth } from "@clerk/nextjs/server";
-import { prisma } from "@/lib/prisma";
-
 export const dynamic = "force-dynamic";
+export const revalidate = 0;
+export const runtime = "nodejs";
 
 export async function GET() {
-  const { userId } = await auth();
+  try {
+    const { auth } = await import("@clerk/nextjs/server");
+    const { prisma } = await import("@/lib/prisma");
 
-  if (!userId) {
-    return Response.json({ error: "Unauthorized" }, { status: 401 });
+    const { userId } = await auth();
+
+    if (!userId) {
+      return Response.json([], { status: 200 });
+    }
+
+    const messages = await prisma.message.findMany({
+      where: {
+        userId,
+      },
+      orderBy: {
+        createdAt: "asc",
+      },
+    });
+
+    return Response.json(messages);
+  } catch (error) {
+    console.error("GET MESSAGE ERROR:", error);
+    return Response.json([], { status: 200 });
   }
-
-  const messages = await prisma.message.findMany({
-    where: { userId },
-    orderBy: { createdAt: "asc" },
-  });
-
-  return Response.json(messages);
 }
 
 export async function POST(req) {
-  const { userId } = await auth();
+  try {
+    const { auth } = await import("@clerk/nextjs/server");
+    const { prisma } = await import("@/lib/prisma");
 
-  if (!userId) {
-    return Response.json({ error: "Unauthorized" }, { status: 401 });
-  }
+    const { userId } = await auth();
 
-  const body = await req.json();
+    if (!userId) {
+      return Response.json(
+        { error: "Unauthorized" },
+        { status: 401 }
+      );
+    }
 
-  const message = await prisma.message.create({
-    data: {
-      userId,
-      role: body.role,
-      content: body.content,
-    },
-  });
+    const body = await req.json();
 
-  return Response.json(message);
-}
-export async function DELETE() {
-  const { userId } = await auth();
+    const message = await prisma.message.create({
+      data: {
+        userId,
+        role: body.role || "user",
+        content: body.content || "",
+      },
+    });
 
-  if (!userId) {
+    return Response.json(message);
+  } catch (error) {
+    console.error("SAVE MESSAGE ERROR:", error);
+
     return Response.json(
-      { error: "Unauthorized" },
-      { status: 401 }
+      { error: "Failed to save message" },
+      { status: 500 }
     );
   }
-
-  await prisma.message.deleteMany({
-    where: { userId },
-  });
-
-  return Response.json({
-    success: true,
-  });
 }
