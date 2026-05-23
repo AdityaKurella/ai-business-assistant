@@ -1,5 +1,5 @@
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
 }
 
 generator client {
@@ -34,4 +34,18 @@ model Invoice {
   amount    String
   status    String   @default("Unpaid")
   createdAt DateTime @default(now())
+}
+model Automation {
+  id          String   @id @default(cuid())
+  userId      String
+  title       String
+  trigger     String
+  action      String
+  category    String
+  status      String   @default("Draft")
+  priority    String   @default("Medium")
+  runs        Int      @default(0)
+  successRate String   @default("Ready")
+  icon        String   @default("⚙️")
+  createdAt   DateTime @default(now())
 }
